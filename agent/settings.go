@@ -13,6 +13,7 @@ type AgentSettings struct {
 	SentinelIp          string `yaml:"sentinel_ip"`
 	SentinelPort        string `yaml:"sentinel_port"`
 	RestartCommand      string `yaml:"restart_command"`
+	ReloadCommand       string `yaml:"reload_command"`
 	LogFile             string `yaml:"log_file"`
 }
 
@@ -20,9 +21,9 @@ var Settings AgentSettings = AgentSettings{}
 
 func ValidateSettings() {
 	if Settings.TwemproxyPoolName == "" ||
-		Settings.TwemproxyConfigFile == "" || 
-		Settings.SentinelIp     == "" || 
-		Settings.SentinelPort   == "" || 
+		Settings.TwemproxyConfigFile == "" ||
+		Settings.SentinelIp == "" ||
+		Settings.SentinelPort == "" ||
 		Settings.RestartCommand == "" {
 		flag.Usage()
 		os.Exit(1)

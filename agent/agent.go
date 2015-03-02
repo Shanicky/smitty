@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -24,10 +25,10 @@ func UpdateMaster(master_name string, ip string, port string) bool {
 	Debug(fmt.Sprintf("Updating master %s to %s.", master_name, address))
 	servers := twemproxyConfig[Settings.TwemproxyPoolName].Servers
 	for i := range servers {
-		server_data    := strings.Split(servers[i], string(' '))
-		address_data   := strings.Split(server_data[0], string(':'))
-		old_address    := ComposeRedisAddress(address_data[0], address_data[1])
-		server_name    := server_data[1]
+		server_data := strings.Split(servers[i], string(' '))
+		address_data := strings.Split(server_data[0], string(':'))
+		old_address := ComposeRedisAddress(address_data[0], address_data[1])
+		server_name := server_data[1]
 
 		if master_name == server_name && address != old_address {
 			twemproxyConfig[Settings.TwemproxyPoolName].Servers[i] = fmt.Sprint(address, ":1 ", master_name)
@@ -46,6 +47,15 @@ func LoadTwemproxyConfig() {
 func SaveTwemproxyConfig() {
 	Debug("Saving Twemproxy config.")
 	WriteYaml(Settings.TwemproxyConfigFile, &twemproxyConfig)
+}
+
+func ReloadTwemproxy() error {
+	Debug("Send sigusr1 to Twemproxy")
+	err := exec.Command(Settings.ReloadCommand).Run()
+	if err != nil {
+		Debug(fmt.Sprintf("wtf : %s", err))
+	}
+	return err
 }
 
 func RestartTwemproxy() error {
@@ -68,7 +78,8 @@ func SwitchMaster(master_name string, ip string, port string) error {
 	Debug("Received switch-master.")
 	if UpdateMaster(master_name, ip, port) {
 		SaveTwemproxyConfig()
-		err := RestartTwemproxy()
+		err := ReloadTwemproxy()
+		//		err := RestartTwemproxy()
 		return err
 	} else {
 		return nil
@@ -94,8 +105,8 @@ func ValidateCurrentMaster() error {
 		return err
 	}
 	master_name := sentinel_info[1]
-	ip          := sentinel_info[3]
-	port        := sentinel_info[5]
+	ip := sentinel_info[3]
+	port := sentinel_info[5]
 
 	err = SwitchMaster(master_name, ip, port)
 
